@@ -120,8 +120,7 @@ CREATE TABLE staging_orders
 
 
 
--- 2. Use the proposed set of dimension tables and their respective columns.
--- DimDate table
+--- CREATE DIMS
 CREATE TABLE DimDate (
     DateID SERIAL PRIMARY KEY,
     Date DATE,
@@ -132,7 +131,6 @@ CREATE TABLE DimDate (
     WeekOfYear INT
 );
 
--- DimCustomer table
 CREATE TABLE DimCustomer (
     CustomerID SERIAL PRIMARY KEY,
     CompanyName VARCHAR(40),
@@ -146,7 +144,6 @@ CREATE TABLE DimCustomer (
     Phone VARCHAR(24)
 );
 
--- DimProduct table
 CREATE TABLE DimProduct (
     ProductID SERIAL PRIMARY KEY,
     ProductName VARCHAR(40),
@@ -157,7 +154,6 @@ CREATE TABLE DimProduct (
     UnitsInStock SMALLINT
 );
 
--- DimEmployee table
 CREATE TABLE DimEmployee (
     EmployeeID SERIAL PRIMARY KEY,
     LastName VARCHAR(20),
@@ -174,21 +170,18 @@ CREATE TABLE DimEmployee (
     Extension VARCHAR(4)
 );
 
--- DimCategory table
 CREATE TABLE DimCategory (
     CategoryID SERIAL PRIMARY KEY,
     CategoryName VARCHAR(15),
     Description TEXT
 );
 
--- DimShipper table
 CREATE TABLE DimShipper (
     ShipperID SERIAL PRIMARY KEY,
     CompanyName VARCHAR(40),
     Phone VARCHAR(44)
 );
 
--- DimSupplier table
 CREATE TABLE DimSupplier (
     SupplierID SERIAL PRIMARY KEY,
     CompanyName VARCHAR(40),
@@ -202,7 +195,6 @@ CREATE TABLE DimSupplier (
     Phone VARCHAR(24)
 );
 
--- The table FactSales with the columns below
 CREATE TABLE FactSales (
     SalesID SERIAL PRIMARY KEY,
     DateID INT,
@@ -225,8 +217,6 @@ CREATE TABLE FactSales (
     FOREIGN KEY (ShipperID) REFERENCES DimShipper(ShipperID),
     FOREIGN KEY (SupplierID) REFERENCES DimSupplier(SupplierID)
 );
-
---Load Data Into Staging, Transformation, and Star Schema
 
 INSERT INTO staging_customers 
 SELECT * FROM Customer;
@@ -256,8 +246,6 @@ SELECT * FROM salesorder ;
 INSERT INTO staging_employees
 SELECT * FROM employee ;
 
-
---- . Transform the data from the staging tables and load it into the respective dimension tables
 
 INSERT INTO DimProduct (ProductID, ProductName, SupplierID, CategoryID, QuantityPerUnit, UnitPrice, UnitsInStock)
 SELECT ProductID, ProductName, SupplierID, CategoryID, QuantityPerUnit, UnitPrice, UnitsInStock
@@ -296,7 +284,7 @@ SELECT
 FROM
     staging_orders;
 
--- Load data  into the fact table
+-- FACTS
 
 INSERT INTO FactSales (DateID, CustomerID, ProductID, EmployeeID, CategoryID, ShipperID, SupplierID, QuantitySold, UnitPrice, Discount, TotalAmount, TaxAmount) 
 SELECT
@@ -325,9 +313,7 @@ LEFT JOIN DimDate d ON o.orderdate = d.Date;
 SELECT * FROM FactSales
 
 
--- 6) After loading data into the fact and dimension tables, you should validate the data to ensure it is accurate and complete. 
---This process typically involves
---1 
+-- VALIDATION(6)
 SELECT 'DimDate' AS Table_Name, COUNT(*) AS Record_Count FROM DimDate
 UNION ALL
 SELECT 'DimCustomer', COUNT(*) FROM DimCustomer
@@ -371,10 +357,6 @@ WHERE DateID NOT IN (SELECT DateID FROM DimDate)
    OR ShipperID NOT IN (SELECT ShipperID FROM DimShipper)
    OR SupplierID NOT IN (SELECT SupplierID FROM DimSupplier);
 
-
-
--- 2) Display the top (worst) five products by number of transactions, total sales, and tax (add category section). This involves querying the FactSales table
-
 SELECT 
     p.ProductID,
     p.ProductName,
@@ -393,9 +375,6 @@ GROUP BY
 ORDER BY 
     NumTransactions ASC, TotalSales ASC, TotalTax ASC
 LIMIT 5;
-
--- 3) Display the top (worst) five customers by number of transactions and purchase amount (add gender section, region, country, product categories, age group). T
---his involves querying the FactSales table.
 
 SELECT
     c.CustomerID,
@@ -418,8 +397,6 @@ ORDER BY
     TotalPurchaseAmount ASC
 LIMIT 5;
 
--- 4) Display a sales chart (with the total amount of sales and the quantity of items sold) for the first week of each month.
---This involves querying the FactSales and DimDate tables.
 SELECT 
     Month,
     SUM(TotalAmount) AS TotalSalesAmount,
@@ -435,11 +412,6 @@ GROUP BY
 ORDER BY 
     Month;
 
--- 1) we don’t do that because there is no correct  data
-
-
---5)Display a weekly sales report (with monthly totals) by product category (period: one year). 
---This involves querying the FactSales, DimDate, and DimProduct tables.
 SELECT 
     DP.CategoryID,
     DC.CategoryName,
@@ -462,8 +434,7 @@ ORDER BY
     EXTRACT(MONTH FROM DD.Date), EXTRACT(WEEK FROM DD.Date), DP.CategoryID;
 
 
--- 7)Display sales rankings by product category (with the best-selling categories at the top). 
---This involves querying the FactSales and DimProduct tables.
+-- display
 SELECT 
     DP.CategoryID,
     DC.CategoryName,
@@ -480,9 +451,6 @@ ORDER BY
     TotalQuantitySold DESC;
 
 
--- 6) Display the median monthly sales value by product category and country. 
---This involves querying the FactSales, DimProduct, and DimCustomer tables 
---and requires a more complex query or a custom function to calculate the median.
  SELECT
 	EXTRACT(month FROM d.Date) AS Month,
     p.CategoryID AS productcategory,
@@ -502,5 +470,3 @@ ORDER BY
         c.Country
 ORDER BY
 		Month ASC
-
-
