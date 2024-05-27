@@ -1,5 +1,4 @@
-1) -- In the sales_analysis database, create a table named sales_data. 
--- For the purpose of this assignment, choose the "range partitioning" approach based on the sale_date to partition the data by month.
+1) --Create sales table
 CREATE TABLE sales_data(
     sale_id INTEGER,
     product_id INTEGER NOT NULL,
@@ -10,8 +9,8 @@ CREATE TABLE sales_data(
     PRIMARY KEY (sale_id, sale_date)
 ) PARTITION BY RANGE (sale_date);
 
-2) -- Create partitions for the past 12 months. 
--- Each partition should be named in the sales_data_yyyy_mm format, where yyyy is the year and mm is the month.
+
+2) -- Create partitions
 
 CREATE TABLE sales_data_2023_01 PARTITION OF sales_data
     FOR VALUES FROM ('2023-01-01') TO ('2023-02-01');
@@ -49,11 +48,7 @@ CREATE TABLE sales_data_2023_11 PARTITION OF sales_data
 CREATE TABLE sales_data_2023_12 PARTITION OF sales_data
     FOR VALUES FROM ('2023-12-01') TO ('2024-01-01');
 
-3)--Write a script to generate and insert synthetic data into sales_data. 
---Ensure that the data gets correctly routed to the appropriate partitions. 
---The script should:
---Generate at least 1000 rows of synthetic data distributed across the last 12 months.
---Include a mix of product_id, region_id, and salesperson_id.
+3)-- Generate data
 
 CREATE OR REPLACE FUNCTION generate_insert_data()
 RETURNS void
@@ -100,7 +95,7 @@ sales_data
 GROUP BY year_month
 ORDER BY year_month
 
-6)--Identify the top three salesperson_id values by sale_amount within a specific region across all partitions.
+6)--Identify best salesperson
 
 WITH person_sale AS (
     SELECT 
@@ -121,10 +116,9 @@ SELECT
 FROM 
      person_sale
 WHERE 
-    person_rank <= 3;
+    person_rank <= 3;	
 	
-	
-7)--Define a maintenance task to drop partitions older than 12 months and create new partitions for the next month.
+7)-- Drop partitions
 
 CREATE OR REPLACE PROCEDURE manage_partitions()
 LANGUAGE plpgsql
@@ -161,9 +155,7 @@ BEGIN
 						   next_month_name, month_start, month_end);
 			RAISE NOTICE 'Created partition: %', next_month_name;
 		ELSE
-			RAISE NOTICE 'Partition % already exists, skipping creation.', next_month_name;
-			
-			
+			RAISE NOTICE 'Partition % already exists, skipping creation.', next_month_name;			
     END IF;
 	END LOOP;
 
@@ -171,26 +163,3 @@ END;
 $$;
 
 CALL manage_partitions();
-   
-
-
-
-
-
-
-
-
-
-
-	
-		
-
-
-
-
-	
-	
-	
-	
-	
-	
