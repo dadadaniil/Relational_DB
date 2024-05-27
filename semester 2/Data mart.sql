@@ -1,5 +1,4 @@
---1)
--- Create a fact table: FactSupplierPurchases
+-- Create table
 CREATE TABLE FactSupplierPurchases (
     PurchaseID SERIAL PRIMARY KEY,
     SupplierID INT,
@@ -8,8 +7,6 @@ CREATE TABLE FactSupplierPurchases (
     NumberOfProducts INT,
     FOREIGN KEY (SupplierID) REFERENCES DimSupplier(SupplierID)
 );
-
--- Populate the FactSupplierPurchases table with data aggregated from the staging tables
 
 INSERT INTO FactSupplierPurchases (SupplierID, TotalPurchaseAmount, PurchaseDate, NumberOfProducts)
 SELECT 
@@ -21,7 +18,7 @@ FROM staging_order_details od
 JOIN staging_products p ON od.ProductID = p.ProductID
 GROUP BY p.SupplierID;
 
---- Supplier Spending Analysis
+--- Spending
 SELECT
     s.CompanyName,
     SUM(fsp.TotalPurchaseAmount) AS TotalSpend,
@@ -32,7 +29,7 @@ JOIN DimSupplier s ON fsp.SupplierID = s.SupplierID
 GROUP BY s.CompanyName, Year, Month
 ORDER BY TotalSpend DESC;
 
---Product Cost Breakdown by Supplier
+--Product Cost
 SELECT
     s.CompanyName,
     p.ProductName,
@@ -45,7 +42,7 @@ JOIN DimSupplier s ON p.SupplierID = s.SupplierID
 GROUP BY s.CompanyName, p.ProductName
 ORDER BY s.CompanyName, TotalSpend DESC;
 
---Top Five Products by Total Purchases per Supplier
+--Top Five Products
 SELECT
     s.CompanyName,
     p.ProductName,
@@ -57,16 +54,7 @@ GROUP BY s.CompanyName, p.ProductName
 ORDER BY s.CompanyName, TotalSpend DESC
 LIMIT 5;
 
-
---Supplier Performance Report
--- не работает 
-
---Supplier Reliability Score Report
--- не работает 
-
---2)
-
---Create a fact table: FactProductSales
+--fact table
 CREATE TABLE FactProductSales (
     FactSalesID SERIAL PRIMARY KEY,
     DateID INT,
@@ -76,8 +64,6 @@ CREATE TABLE FactProductSales (
     FOREIGN KEY (DateID) REFERENCES DimDate(DateID),
     FOREIGN KEY (ProductID) REFERENCES DimProduct(ProductID)
 );
-
--- Insert into FactProductSales table:
 
 INSERT INTO FactProductSales (DateID, ProductID, QuantitySold, TotalSales)
 SELECT 
@@ -101,11 +87,8 @@ GROUP BY p.ProductName
 ORDER BY TotalRevenue DESC
 LIMIT 5;
 
---Products Below Reorder
---не работает 
 
-
--- Sales Trends by Product Category:
+-- Statistics
 SELECT 
     c.CategoryName, 
     EXTRACT(YEAR FROM d.Date) AS Year,
@@ -120,8 +103,6 @@ JOIN DimDate d ON fps.DateID = d.DateID
 GROUP BY c.CategoryName, Year, Month, d.Date
 ORDER BY Year, Month, TotalRevenue DESC;
 
---Inventory Valuation
-
 SELECT 
     p.ProductName,
     p.UnitsInStock,
@@ -130,8 +111,6 @@ SELECT
 FROM 
     DimProduct p
 ORDER BY InventoryValue DESC;	
-	
---Supplier Performance Based on Product Sales
 
 SELECT 
     s.CompanyName,
@@ -145,15 +124,6 @@ JOIN DimSupplier s ON p.SupplierID = s.SupplierID
 GROUP BY s.CompanyName
 ORDER BY TotalRevenueGenerated DESC
 
-	
-		
--- 3) не работает 	
-	
-
---4)All tables were created in the first task
-
---Aggregate Sales by Month and Category
-
 SELECT d.Month, d.Year, c.CategoryName, SUM(fs.TotalAmount) AS TotalSales
 FROM FactSales fs
 JOIN DimDate d ON fs.DateID = d.DateID
@@ -161,8 +131,6 @@ JOIN DimCategory c ON fs.CategoryID = c.CategoryID
 GROUP BY d.Month, d.Year, c.CategoryName
 ORDER BY d.Year, d.Month, TotalSales DESC;	
 	
-
--- Top-Selling Products per Quarter
 SELECT d.Quarter, d.Year, p.ProductName, SUM(fs.QuantitySold) AS TotalQuantitySold
 FROM FactSales fs
 JOIN DimDate d ON fs.DateID = d.DateID
@@ -171,22 +139,18 @@ GROUP BY d.Quarter, d.Year, p.ProductName
 ORDER BY d.Year, d.Quarter, TotalQuantitySold DESC
 LIMIT 5;
 				
--- Customer Sales Overview
 SELECT cu.CompanyName, SUM(fs.TotalAmount) AS TotalSpent, COUNT(DISTINCT fs.salesid) AS TransactionsCount
 FROM FactSales fs
 JOIN DimCustomer cu ON fs.CustomerID = cu.CustomerID
 GROUP BY cu.CompanyName
 ORDER BY TotalSpent DESC;
-	
-				
---Sales Performance by Employee	
+
 SELECT e.FirstName, e.LastName, COUNT(fs.salesid) AS NumberOfSales, SUM(fs.TotalAmount) AS TotalSales
 FROM FactSales fs
 JOIN DimEmployee e ON fs.EmployeeID = e.EmployeeID
 GROUP BY e.FirstName, e.LastName
 ORDER BY TotalSales DESC;	
-					
---Monthly Sales Growth Rate	
+				
 WITH MonthlySales AS (
 SELECT
         d.Year,
@@ -206,10 +170,3 @@ MonthlyGrowth AS (
     FROM MonthlySales
 )
 SELECT * FROM MonthlyGrowth;
-	
-	
-	
-	
-	
-	
-	
