@@ -7,8 +7,6 @@ CREATE TABLE remote_table (
 
 -- Insert sample data into the table
 INSERT INTO remote_table (name, age) VALUES
-    ('Ermolya Krravchenko', 21),
-    ('Ksenya Veka', 34),
-    ('Yan Marchan', 29);
-
-
+    ('Anatoliy Chybi', 21),
+    ('Joi Nakirati', 34),
+    ('Chel Chill', 29);
